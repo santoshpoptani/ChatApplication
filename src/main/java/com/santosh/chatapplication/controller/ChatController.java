@@ -1,28 +1,24 @@
 package com.santosh.chatapplication.controller;
 
-import com.santosh.chatapplication.model.Message;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class ChatController {
-    @Autowired
-    private SimpMessagingTemplate simpMessagingTemplate;
 
-    @MessageMapping("/message") // /app/message
-    @SendTo("chatroom/public")
-    public Message receivePublicMessage(@Payload Message message)
-    {
+    @MessageMapping("/chat.sendMessage")
+    @SendTo("/topic/public")
+    public ChatMessage sendMessage(@Payload ChatMessage message){
         return message;
     }
 
-    @MessageMapping("/private-message")
-    public Message recivePrivateMessage(@Payload Message message){
-        simpMessagingTemplate.convertAndSendToUser(message.getReciverName(),"/private",message);
-        return  message;
+    @MessageMapping("/chat.addUser")
+    @SendTo("/topic/public")
+    public ChatMessage addUser(@Payload ChatMessage message, SimpMessageHeaderAccessor messageHeaderAccessor){
+        messageHeaderAccessor.getSessionAttributes().put("username", message.getSender());
+        return message;
     }
 }
