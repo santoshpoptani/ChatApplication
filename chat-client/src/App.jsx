@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import ChatRomm from './components/ChatRomm'
-function App() {
- 
+import ChatComponent from './Component/ChatComponent'
 
+
+function App() {
+  
   return (
-    <>
-     <ChatRomm/>
-    </>
+   <>
+   <ChatComponent/>
+   </>
   )
 }
 
