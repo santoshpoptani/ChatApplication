@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SockJS from "sockjs-client";
 import {over} from 'stompjs';
+import Sidebar from "./Sidebar";
 
 var client =null;
 function ChatComponent(){
@@ -26,7 +27,7 @@ function ChatComponent(){
   const onConnected = () => {
     // subcribe to the topics
     client.subscribe('/topic/public', onMessageRecived);
-
+    console.log('inside the onConnected Method')
     // tell username to server
     client.send('/app/chat.addUser', {}, JSON.stringify({sender:inputValue , type : 'JOIN'}));
 
@@ -34,7 +35,6 @@ function ChatComponent(){
 
   const onMessageRecived = (payload) => {
     const data = JSON.parse(payload.body);
-    console.log(message)
     setMessages((prevMessages) => [...prevMessages, data]);
   }
 
@@ -57,39 +57,70 @@ function ChatComponent(){
 
   return (
     <div>
-      {!connected && ( // Conditionally render the input field and connect button if not connected
-        <div>
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Enter connection URL"
-          />
-          <button onClick={connectToWebSocket}>Connect</button>
+     {!connected && (
+    <div className="justify-center h-screen flex flex-col items-center">
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        placeholder="Enter connection URL"
+        className="border border-gray-300 rounded-md px-4 py-2 mb-4 w-64"
+      />
+      <button onClick={connectToWebSocket} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Connect
+      </button>
+    </div>
+  )}
+  
+  {connected && (
+    <div className="flex items-center justify-center h-screen"> 
+      <div className="flex items-center">
+        {/* Sidebar */}
+        <Sidebar />
+      </div>
+      <div className="flex flex-col items-center">
+        <div className="w-full border border-gray-300 rounded-md p-4 mb-4 h-96 overflow-auto">
+          <ul>
+            {messages.map((msg, index) => (
+              <li key={index} className="mb-2 flex items-center">
+                {(msg.type === 'JOIN' || msg.type === 'LEAVE') && (
+                  <div className="text-sm text-gray-700 mr-3">
+                    {msg.type === 'JOIN' ? `User ${msg.sender} joined the chat` : `User ${msg.sender} left the chat`}
+                  </div>
+                )}
+                {msg.type === 'CHAT' && (
+                  <>
+                    <div className="bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center mr-3">
+                      <span className="text-white font-bold">{msg.sender.substring(0, 1)}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold">{msg.sender}</span>: {msg.message}
+                    </div>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
-
-{connected && (
-        <div>
-          <ul style={{ listStyleType: 'none', padding: 0 }}>
-                {messages.map((msg, index) => (
-                    <li key={index}>
-                        {msg.type === 'JOIN' && <span>{msg.sender} joined!</span>}
-                        {msg.type === 'LEAVE' && <span>{msg.sender} left!</span>}
-                        {msg.type === 'CHAT' && <span>{msg.sender}: {msg.message}</span>}
-                    </li>
-                 ))}
-            </ul>
+        <div className="flex">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Enter message"
+            className="border border-gray-300 rounded-md px-4 py-2 w-48 mr-2"
           />
-          <button onClick={handleSendMessage}>Send Message</button>
+          <button onClick={handleSendMessage} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Send Message
+          </button>
         </div>
-      )}
+      </div>
     </div>
+   
+  )}
+  </div>
+  
+
   );
 
 }
