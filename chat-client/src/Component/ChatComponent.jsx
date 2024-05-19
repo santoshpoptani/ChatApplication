@@ -137,31 +137,31 @@ function ChatComponent(){
   }
 
   return (
-    <div>
-     {!connected && (
-    <div className="justify-center h-screen flex flex-col items-center">
+    <div className="min-h-screen bg-gray-100">
+  {!connected && (
+    <div className="flex flex-col items-center justify-center h-screen">
       <input
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Enter connection URL"
-        className="border border-gray-300 rounded-md px-4 py-2 mb-4 w-64"
+        className="border border-gray-300 rounded-md px-4 py-2 mb-4 w-64 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
-      <button onClick={connectToWebSocket} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+      <button 
+        onClick={connectToWebSocket} 
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-105">
         Connect
       </button>
     </div>
   )}
-  
-  {connected &&  selectedUser == null && (
-    <div className="flex items-center justify-center h-screen"> 
+
+  {connected && selectedUser == null && (
+    <div className="flex items-center justify-center h-screen">
       <div className="flex items-center">
-        {/* Sidebar */}
         <Sidebar onlineuser={connectedUser} setSelectedUser={setSelectedUser} />
-        {console.log(selectedUser + "From public chat area")}
       </div>
       <div className="flex flex-col items-center">
-        <div className="w-full border border-gray-300 rounded-md p-4 mb-4 h-96 overflow-auto">
+        <div className="w-full border border-gray-300 rounded-md p-4 mb-4 h-96 overflow-auto bg-white shadow-md">
           <ul>
             {messages.map((msg, index) => (
               <li key={index} className="mb-2 flex items-center">
@@ -190,55 +190,55 @@ function ChatComponent(){
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Enter message"
-            className="border border-gray-300 rounded-md px-4 py-2 w-48 mr-2"
+            className="border border-gray-300 rounded-md px-4 py-2 w-48 mr-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button onClick={handleSendMessage} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          <button 
+            onClick={handleSendMessage} 
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-105">
             Send Message
           </button>
         </div>
       </div>
     </div>
-   
   )}
 
-{connected && selectedUser && (
-  <div className="flex items-center justify-center h-screen"> 
-    <div className="flex items-center">
-      {/* Sidebar */}
-      <Sidebar onlineuser={connectedUser} setSelectedUser={setSelectedUser} />
-      {console.log(selectedUser + "From Private chat area")}
-    </div>
-    <div className="flex flex-col items-center">
-      <div className="w-full border border-gray-300 rounded-md p-4 mb-4 h-96 overflow-auto">
-        {/* Display selected user's private messages */}
-         <ul>
-                {getprivateChats
-                  .filter((msg) => (msg.senderId === inputValue && msg.reciverId === selectedUser) || (msg.senderId === selectedUser && msg.reciverId === inputValue))
-                  .map((msg, index) => (
-                    <li key={index} className="mb-2 flex items-center">
-                      <div>
-                        <span className="font-bold">{msg.senderId === inputValue ? inputValue : msg.senderId}</span>: {msg.content}
-                      </div>
-                    </li>
-                  ))}
-              </ul>
+  {connected && selectedUser && (
+    <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center">
+        <Sidebar onlineuser={connectedUser} setSelectedUser={setSelectedUser} />
       </div>
-      <div className="flex">
-        <input
-          type="text"
-          onChange={(e) => setPrivateMessage(e.target.value)}
-          placeholder="Enter private message"
-          className="border border-gray-300 rounded-md px-4 py-2 w-48 mr-2"
-        />
-        <button onClick={handlePrivateMessage} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          Send Private Message
-        </button>
+      <div className="flex flex-col items-center">
+        <div className="w-full border border-gray-300 rounded-md p-4 mb-4 h-96 overflow-auto bg-white shadow-md">
+          <ul>
+            {getprivateChats
+              .filter((msg) => (msg.senderId === inputValue && msg.reciverId === selectedUser) || (msg.senderId === selectedUser && msg.reciverId === inputValue))
+              .map((msg, index) => (
+                <li key={index} className="mb-2 flex items-center">
+                  <div>
+                    <span className="font-bold">{msg.senderId === inputValue ? inputValue : msg.senderId}</span>: {msg.content}
+                  </div>
+                </li>
+              ))}
+          </ul>
+        </div>
+        <div className="flex">
+          <input
+            type="text"
+            onChange={(e) => setPrivateMessage(e.target.value)}
+            placeholder="Enter private message"
+            className="border border-gray-300 rounded-md px-4 py-2 w-48 mr-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button 
+            onClick={handlePrivateMessage} 
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out transform hover:scale-105">
+            Send Private Message
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-)}
-  </div>
-  
+  )}
+</div>
+
 
   );
 
