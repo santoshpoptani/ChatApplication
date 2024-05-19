@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import SockJS from "sockjs-client";
 import {over} from 'stompjs';
+import axios from "axios";
 import Sidebar from "./Sidebar";
 
 var client =null;
@@ -10,6 +11,19 @@ function ChatComponent(){
   const [connected, setConnected] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [connectedUser , setConnectedUser] = useState([]);
+  const [selectedUser , setSelectedUser] = useState(null);
+  const [privateMessaage , setPrivateMessage] = useState();
+  const [getprivateChats, setPrivateChats] = useState([]);
+ 
+
+
+  useEffect(() => {
+    //second approach is to send the fetch methon in side bar and trigger from there
+   if (selectedUser) {
+    fetchPrivateMessagefromDB(selectedUser);
+    }
+  }, [selectedUser])
 
   const connectToWebSocket = () => {
     const enteredUsername = inputValue.trim();
@@ -27,15 +41,53 @@ function ChatComponent(){
   const onConnected = () => {
     // subcribe to the topics
     client.subscribe('/topic/public', onMessageRecived);
+
+    client.subscribe(`/user/${inputValue}/queue/messages`, onPrivateMessageRecived);
+    client.subscribe(`/user/private`, onPrivateMessageRecived);
+
     console.log('inside the onConnected Method')
+    
     // tell username to server
     client.send('/app/chat.addUser', {}, JSON.stringify({sender:inputValue , type : 'JOIN'}));
+
+    //register new User
+    client.send(`/app/chat.addUser/${inputValue}/private`,
+    {},
+    JSON.stringify({name:inputValue , status : 'ONLINE'})
+    );
+
+    findUserandDisplay().then()
+
+  }
+
+  async function findUserandDisplay(){
+    await axios.get(`http://localhost:8080/users`)
+    .then(
+      (res)=>{
+        let connecteduser=res.data.filter(user => user.name !== inputValue);
+        setConnectedUser(connecteduser);
+      }
+    )
+  }
+
+  
+    
+
+
+   const onPrivateMessageRecived = (payload) => {
+    const data = JSON.parse(payload.body);
+    console.log("Data ->>>>>>>>>>>>>>"+data);
+
+    setPrivateChats((prevMessages) => [...prevMessages, data]);
 
   }
 
   const onMessageRecived = (payload) => {
     const data = JSON.parse(payload.body);
     setMessages((prevMessages) => [...prevMessages, data]);
+    if (data.type === 'JOIN') {
+      findUserandDisplay(); // Update the connected users list when a new user joins
+    }
   }
 
   const onError = () =>{
@@ -55,6 +107,35 @@ function ChatComponent(){
     }
   };
 
+  const handlePrivateMessage  = () => {
+    if(privateMessaage && client){
+      const privateChatMessage  = {
+          senderId :inputValue,
+          reciverId : selectedUser,
+          content : privateMessaage,
+          timestamp : new Date()
+      };
+
+      client.send('/app/chat',{}, JSON.stringify(privateChatMessage));
+
+        // Update the state to reflect the new message
+        setPrivateChats((prevMessages) => [...prevMessages, privateChatMessage]);
+
+        // Clear the input field
+        setPrivateMessage('');
+    }
+
+  }
+
+   const fetchPrivateMessagefromDB = async() => {
+    try {
+      const response = await axios.get(`http://localhost:8080/message/${inputValue}/${selectedUser}`);
+      setPrivateChats(response.data);
+    } catch (error) {
+      console.error('Error fetching user chat:', error);
+    }
+  }
+
   return (
     <div>
      {!connected && (
@@ -72,11 +153,12 @@ function ChatComponent(){
     </div>
   )}
   
-  {connected && (
+  {connected &&  selectedUser == null && (
     <div className="flex items-center justify-center h-screen"> 
       <div className="flex items-center">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar onlineuser={connectedUser} setSelectedUser={setSelectedUser} />
+        {console.log(selectedUser + "From public chat area")}
       </div>
       <div className="flex flex-col items-center">
         <div className="w-full border border-gray-300 rounded-md p-4 mb-4 h-96 overflow-auto">
@@ -118,6 +200,43 @@ function ChatComponent(){
     </div>
    
   )}
+
+{connected && selectedUser && (
+  <div className="flex items-center justify-center h-screen"> 
+    <div className="flex items-center">
+      {/* Sidebar */}
+      <Sidebar onlineuser={connectedUser} setSelectedUser={setSelectedUser} />
+      {console.log(selectedUser + "From Private chat area")}
+    </div>
+    <div className="flex flex-col items-center">
+      <div className="w-full border border-gray-300 rounded-md p-4 mb-4 h-96 overflow-auto">
+        {/* Display selected user's private messages */}
+         <ul>
+                {getprivateChats
+                  .filter((msg) => (msg.senderId === inputValue && msg.reciverId === selectedUser) || (msg.senderId === selectedUser && msg.reciverId === inputValue))
+                  .map((msg, index) => (
+                    <li key={index} className="mb-2 flex items-center">
+                      <div>
+                        <span className="font-bold">{msg.senderId === inputValue ? inputValue : msg.senderId}</span>: {msg.content}
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+      </div>
+      <div className="flex">
+        <input
+          type="text"
+          onChange={(e) => setPrivateMessage(e.target.value)}
+          placeholder="Enter private message"
+          className="border border-gray-300 rounded-md px-4 py-2 w-48 mr-2"
+        />
+        <button onClick={handlePrivateMessage} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Send Private Message
+        </button>
+      </div>
+    </div>
+  </div>
+)}
   </div>
   
 
